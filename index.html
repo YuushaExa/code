@@ -37,6 +37,25 @@
             border: 1px solid #ccc;
             background-color: #fff;
         }
+        .editable-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .editable-title {
+            font-weight: bold;
+            margin: 10px 0 5px 0;
+        }
+        .editable {
+            height: 200px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            padding: 10px;
+            overflow: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
         iframe {
             width: 100%;
             height: 500px;
@@ -65,8 +84,11 @@
             <div class="editor-title">JavaScript</div>
             <textarea id="js-editor"></textarea>
         </div>
+        <div class="editable-container">
+            <div class="editable-title">Live Preview</div>
+            <div id="live-preview" class="editable" contenteditable="true"></div>
+        </div>
     </div>
-    <iframe id="result"></iframe>
     <script>
         let htmlEditor = CodeMirror.fromTextArea(document.getElementById('html-editor'), {
             mode: "xml",
@@ -90,52 +112,41 @@
         });
 
         [htmlEditor, cssEditor, jsEditor].forEach(editor => {
-            editor.on('change', updateIframe);
+            editor.on('change', updateLivePreview);
         });
 
-        function updateIframe() {
+        function updateLivePreview() {
             const html = htmlEditor.getValue();
             const css = `<style>${cssEditor.getValue()}</style>`;
             const js = `<script>${jsEditor.getValue()}<\/script>`;
 
             const completeContent = `
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Preview</title>
-                    ${css}
-                </head>
-                <body contenteditable="true">
-                    ${html}
-                    ${js}
-                </body>
-                </html>
+                ${css}
+                ${html}
+                ${js}
             `;
 
-            const iframeDoc = document.getElementById('result').contentDocument || document.getElementById('result').contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(completeContent);
-            iframeDoc.close();
-            makeIframeEditable();
+            document.getElementById('live-preview').innerHTML = completeContent;
         }
 
-        function makeIframeEditable() {
-            const iframeDoc = document.getElementById('result').contentDocument || document.getElementById('result').contentWindow.document;
+        // Sync contentEditable changes to CodeMirror editors
+        document.getElementById('live-preview').addEventListener('input', () => {
+            const livePreview = document.getElementById('live-preview');
+            const html = livePreview.innerHTML;
 
-            iframeDoc.body.addEventListener('input', () => {
-                const html = iframeDoc.body.innerHTML;
-                const css = Array.from(iframeDoc.querySelectorAll('style')).map(style => style.innerHTML).join('\n');
-                const js = Array.from(iframeDoc.querySelectorAll('script')).map(script => script.innerHTML).join('\n');
+            // Extract CSS, HTML, and JS parts from the live preview content
+            const cssMatch = html.match(/<style>([\s\S]*?)<\/style>/);
+            const jsMatch = html.match(/<script>([\s\S]*?)<\/script>/);
+            const cssContent = cssMatch ? cssMatch[1] : '';
+            const jsContent = jsMatch ? jsMatch[1] : '';
+            const htmlContent = html.replace(/<style>[\s\S]*?<\/style>/, '').replace(/<script>[\s\S]*?<\/script>/, '');
 
-                htmlEditor.setValue(html);
-                cssEditor.setValue(css);
-                jsEditor.setValue(js);
-            });
-        }
+            htmlEditor.setValue(htmlContent);
+            cssEditor.setValue(cssContent);
+            jsEditor.setValue(jsContent);
+        });
 
-        updateIframe();
+        updateLivePreview();
     </script>
 </body>
 </html>
