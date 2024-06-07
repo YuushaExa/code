@@ -66,7 +66,7 @@
             <textarea id="js-editor"></textarea>
         </div>
     </div>
-    <iframe id="result"></iframe>
+    <iframe id="result" contenteditable="true"></iframe>
     <script>
         let htmlEditor = CodeMirror.fromTextArea(document.getElementById('html-editor'), {
             mode: "xml",
@@ -118,6 +118,22 @@
             iframeDoc.open();
             iframeDoc.write(completeContent);
             iframeDoc.close();
+            makeIframeEditable();
+        }
+
+        function makeIframeEditable() {
+            const iframeDoc = document.getElementById('result').contentDocument || document.getElementById('result').contentWindow.document;
+            iframeDoc.designMode = "on";
+
+            iframeDoc.addEventListener('input', () => {
+                const html = iframeDoc.body.innerHTML;
+                const css = Array.from(iframeDoc.querySelectorAll('style')).map(style => style.innerHTML).join('\n');
+                const js = Array.from(iframeDoc.querySelectorAll('script')).map(script => script.innerHTML).join('\n');
+
+                htmlEditor.setValue(html);
+                cssEditor.setValue(css);
+                jsEditor.setValue(js);
+            });
         }
 
         updateIframe();
