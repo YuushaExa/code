@@ -95,42 +95,46 @@
 
         function updateIframe() {
             const html = htmlEditor.getValue();
-            const css = cssEditor.getValue();
-            const js = jsEditor.getValue();
+            const css = `<style>${cssEditor.getValue()}</style>`;
+            const js = `<script>${jsEditor.getValue()}<\/script>`;
 
-            const iframeDoc = document.getElementById('result').contentDocument || document.getElementById('result').contentWindow.document;
+            const completeContent = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Preview</title>
+                    ${css}
+                </head>
+                <body contenteditable="true">
+                    ${html}
+                    ${js}
+                </body>
+                </html>
+            `;
 
-            // Update HTML content
-            iframeDoc.body.innerHTML = html;
-
-            // Update CSS content
-            let styleElement = iframeDoc.getElementById('iframe-style');
-            if (!styleElement) {
-                styleElement = iframeDoc.createElement('style');
-                styleElement.id = 'iframe-style';
-                iframeDoc.head.appendChild(styleElement);
-            }
-            styleElement.innerHTML = css;
-
-            // Update JavaScript content
-            let scriptElement = iframeDoc.getElementById('iframe-script');
-            if (!scriptElement) {
-                scriptElement = iframeDoc.createElement('script');
-                scriptElement.id = 'iframe-script';
-                iframeDoc.body.appendChild(scriptElement);
-            }
-            scriptElement.innerHTML = js;
-        }
-
-        // Initialize iframe content
-        function initializeIframe() {
             const iframeDoc = document.getElementById('result').contentDocument || document.getElementById('result').contentWindow.document;
             iframeDoc.open();
-            iframeDoc.write('<!DOCTYPE html><html><head></head><body></body></html>');
+            iframeDoc.write(completeContent);
             iframeDoc.close();
+            makeIframeEditable();
         }
 
-        initializeIframe();
+        function makeIframeEditable() {
+            const iframeDoc = document.getElementById('result').contentDocument || document.getElementById('result').contentWindow.document;
+
+            iframeDoc.body.addEventListener('input', () => {
+                const html = iframeDoc.body.innerHTML;
+                const css = Array.from(iframeDoc.querySelectorAll('style')).map(style => style.innerHTML).join('\n');
+                const js = Array.from(iframeDoc.querySelectorAll('script')).map(script => script.innerHTML).join('\n');
+
+                htmlEditor.setValue(html);
+                cssEditor.setValue(css);
+                jsEditor.setValue(js);
+            });
+        }
+
         updateIframe();
     </script>
 </body>
