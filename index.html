@@ -37,30 +37,23 @@
             border: 1px solid #ccc;
             background-color: #fff;
         }
-        .editable-container {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .editable-title {
-            font-weight: bold;
-            margin: 10px 0 5px 0;
-        }
-        .editable {
-            height: 200px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            padding: 10px;
-            overflow: auto;
-            white-space: pre-wrap;
-            font-family: monospace;
-        }
         iframe {
             width: 100%;
             height: 500px;
             border: 1px solid #ccc;
             background-color: #fff;
+            display: none;
+        }
+        #preview-button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #preview-button.active {
+            background-color: #ccc;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
@@ -84,11 +77,9 @@
             <div class="editor-title">JavaScript</div>
             <textarea id="js-editor"></textarea>
         </div>
-        <div class="editable-container">
-            <div class="editable-title">Live Preview</div>
-            <div id="live-preview" class="editable" contenteditable="true"></div>
-        </div>
     </div>
+    <button id="preview-button">Preview</button>
+    <iframe id="result"></iframe>
     <script>
         let htmlEditor = CodeMirror.fromTextArea(document.getElementById('html-editor'), {
             mode: "xml",
@@ -112,41 +103,59 @@
         });
 
         [htmlEditor, cssEditor, jsEditor].forEach(editor => {
-            editor.on('change', updateLivePreview);
+            editor.on('change', updateIframe);
         });
 
-        function updateLivePreview() {
+        const previewButton = document.getElementById('preview-button');
+        const resultIframe = document.getElementById('result');
+        let isPreviewVisible = false;
+
+        previewButton.addEventListener('click', togglePreview);
+
+        function togglePreview() {
+            if (isPreviewVisible) {
+                resultIframe.style.display = 'none';
+                previewButton.classList.remove('active');
+            } else {
+                resultIframe.style.display = 'block';
+                previewButton.classList.add('active');
+                updateIframe();
+            }
+
+            isPreviewVisible = !isPreviewVisible;
+        }
+
+        function updateIframe() {
             const html = htmlEditor.getValue();
+Apologies for the incomplete response. Here's the continuation of the JavaScript code:
+
+```javascript
             const css = `<style>${cssEditor.getValue()}</style>`;
             const js = `<script>${jsEditor.getValue()}<\/script>`;
 
             const completeContent = `
-                ${css}
-                ${html}
-                ${js}
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Preview</title>
+                    ${css}
+                </head>
+                <body>
+                    ${html}
+                    ${js}
+                </body>
+                </html>
             `;
 
-            document.getElementById('live-preview').innerHTML = completeContent;
+            const iframeDoc = document.getElementById('result').contentDocument || document.getElementById('result').contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(completeContent);
+            iframeDoc.close();
         }
 
-        // Sync contentEditable changes to CodeMirror editors
-        document.getElementById('live-preview').addEventListener('input', () => {
-            const livePreview = document.getElementById('live-preview');
-            const html = livePreview.innerHTML;
-
-            // Extract CSS, HTML, and JS parts from the live preview content
-            const cssMatch = html.match(/<style>([\s\S]*?)<\/style>/);
-            const jsMatch = html.match(/<script>([\s\S]*?)<\/script>/);
-            const cssContent = cssMatch ? cssMatch[1] : '';
-            const jsContent = jsMatch ? jsMatch[1] : '';
-            const htmlContent = html.replace(/<style>[\s\S]*?<\/style>/, '').replace(/<script>[\s\S]*?<\/script>/, '');
-
-            htmlEditor.setValue(htmlContent);
-            cssEditor.setValue(cssContent);
-            jsEditor.setValue(jsContent);
-        });
-
-        updateLivePreview();
+        updateIframe();
     </script>
 </body>
 </html>
