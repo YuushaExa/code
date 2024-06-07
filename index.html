@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <title>Code Sandbox</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSFiddle Clone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/monokai.min.css">
     <style>
         body {
             display: flex;
@@ -12,44 +14,89 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
         }
-        #editor {
+        #container {
             display: flex;
+            flex-direction: column;
             width: 100%;
             max-width: 1200px;
+        }
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
             margin-bottom: 20px;
         }
-        textarea {
-            width: 33%;
-            height: 300px;
-            margin: 5px;
-            padding: 10px;
-            box-sizing: border-box;
-            font-family: monospace;
+        .editor-title {
+            font-weight: bold;
+            margin: 10px 0 5px 0;
+        }
+        .CodeMirror {
+            height: 200px;
+            border: 1px solid #ccc;
+            background-color: #fff;
         }
         iframe {
             width: 100%;
             height: 500px;
             border: 1px solid #ccc;
+            background-color: #fff;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/htmlmixed/htmlmixed.min.js"></script>
 </head>
 <body>
-    <div id="editor">
-        <textarea id="html" placeholder="HTML"></textarea>
-        <textarea id="css" placeholder="CSS"></textarea>
-        <textarea id="js" placeholder="JavaScript"></textarea>
+    <h1>Code Sandbox</h1>
+    <div id="container">
+        <div class="editor-container">
+            <div class="editor-title">HTML</div>
+            <textarea id="html-editor"></textarea>
+        </div>
+        <div class="editor-container">
+            <div class="editor-title">CSS</div>
+            <textarea id="css-editor"></textarea>
+        </div>
+        <div class="editor-container">
+            <div class="editor-title">JavaScript</div>
+            <textarea id="js-editor"></textarea>
+        </div>
     </div>
-    <iframe id="preview"></iframe>
+    <iframe id="result"></iframe>
     <script>
-        const htmlEditor = document.getElementById('html');
-        const cssEditor = document.getElementById('css');
-        const jsEditor = document.getElementById('js');
-        const previewFrame = document.getElementById('preview');
-        function updatePreview() {
-            const html = htmlEditor.value;
-            const css = `<style>${cssEditor.value}</style>`;
-            const js = `<script>${jsEditor.value}\<\/script>`;
+        let htmlEditor = CodeMirror.fromTextArea(document.getElementById('html-editor'), {
+            mode: "xml",
+            theme: "monokai",
+            lineNumbers: true,
+            autoCloseTags: true
+        });
+
+        let cssEditor = CodeMirror.fromTextArea(document.getElementById('css-editor'), {
+            mode: "css",
+            theme: "monokai",
+            lineNumbers: true,
+            autoCloseBrackets: true
+        });
+
+        let jsEditor = CodeMirror.fromTextArea(document.getElementById('js-editor'), {
+            mode: "javascript",
+            theme: "monokai",
+            lineNumbers: true,
+            autoCloseBrackets: true
+        });
+
+        [htmlEditor, cssEditor, jsEditor].forEach(editor => {
+            editor.on('change', updateIframe);
+        });
+
+        function updateIframe() {
+            const html = htmlEditor.getValue();
+            const css = `<style>${cssEditor.getValue()}</style>`;
+            const js = `<script>${jsEditor.getValue()}<\/script>`;
 
             const completeContent = `
                 <!DOCTYPE html>
@@ -67,28 +114,13 @@
                 </html>
             `;
 
-            const blob = new Blob([completeContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-
-            previewFrame.src = url;
+            const iframeDoc = document.getElementById('result').contentDocument || document.getElementById('result').contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(completeContent);
+            iframeDoc.close();
         }
 
-        htmlEditor.addEventListener('input', updatePreview);
-
-    
-          
-            
-    
-
-          
-          Expand Down
-    
-    
-  
-        cssEditor.addEventListener('input', updatePreview);
-        jsEditor.addEventListener('input', updatePreview);
-        // Initial call to display content on page load
-        updatePreview();
+        updateIframe();
     </script>
 </body>
 </html>
